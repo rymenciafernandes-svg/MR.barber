@@ -84,6 +84,61 @@ $('#serviceForm').onsubmit=e=>{e.preventDefault();safe(async()=>{const f=e.curre
 $('#hoursForm').onsubmit=e=>{e.preventDefault();safe(async()=>{if(!settings?.id)throw Error('Configurações não encontradas');const f=e.currentTarget;if(f.elements.close.value<=f.elements.open.value)throw Error('Horário de fechamento inválido');const {error:x}=await db.from('barbershop_settings').update({opening_time:f.elements.open.value,closing_time:f.elements.close.value}).eq('id',settings.id);if(x)throw x;await loadSettings();alert('Horários atualizados')})};
 $('#blockForm').onsubmit=e=>{e.preventDefault();safe(async()=>{const f=e.currentTarget,v=new FormData(f),a=new Date(v.get('start')),z=new Date(v.get('end'));if(!(z>a))throw Error('Período inválido');const {error:x}=await db.from('blocked_periods').insert({starts_at:a.toISOString(),ends_at:z.toISOString(),reason:String(v.get('reason')||'')});if(x)throw x;f.reset();await blocksRefresh();alert('Período bloqueado')})};
 $('#logout').onclick=()=>safe(async()=>{await db.auth.signOut();location.href='index.html'});
+
+/* CATÁLOGO DE COSMÉTICOS — etapa 1: não altera reservas ou caixa */
+let cosmeticCache=[], serviceCache=[];
+async function uploadCatalogPhoto(file,folder){
+ if(!file)return null;
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Use imagem JPG, PNG ou WebP.');
+ if(file.size>3*1024*1024)throw Error('A imagem deve ter até 3 MB.');
+ const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[file.type];
+ const name=`${folder}/${crypto.randomUUID()}.${ext}`;
+ const {error:e}=await db.storage.from('rodolfo-catalogo').upload(name,file,{contentType:file.type,upsert:false});
+ if(e)throw e;
+ const {data}=db.storage.from('rodolfo-catalogo').getPublicUrl(name);
+ return data.publicUrl;
+}
+async function refreshCatalogAdmin(){
+ const [sr,pr]=await Promise.all([db.from('services').select('id,name,description,price,duration_minutes,image_url').order('name'),db.from('barber_cosmetics').select('id,name,description,price,stock,active,image_url').order('name')]);
+ if(sr.error)throw sr.error;if(pr.error)throw pr.error;
+ serviceCache=sr.data||[];cosmeticCache=pr.data||[];
+ const select=$('#editServiceSelect'),selected=select.value;
+ select.innerHTML='<option value="">Selecione...</option>'+serviceCache.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+ if(serviceCache.some(s=>s.id===selected))select.value=selected;
+ $('#cosmeticsList').innerHTML=cosmeticCache.map(p=>`<article class="item"><div class="catalog-row">${p.image_url?`<img class="catalog-thumb" src="${esc(p.image_url)}" alt="${esc(p.name)}">`:''}<div><strong>${esc(p.name)}</strong><p>${cash(p.price)} · Estoque: ${Number(p.stock)} · ${p.active?'Disponível':'Indisponível'}</p></div></div><button type="button" class="secondary" data-edit-cosmetic="${esc(p.id)}">Editar</button></article>`).join('')||'<p>Nenhum cosmético cadastrado.</p>';
+}
+$('#editServiceSelect').addEventListener('change',()=>{
+ const s=serviceCache.find(x=>x.id===$('#editServiceSelect').value);if(!s)return;
+ const f=$('#editServiceForm');f.elements.name.value=s.name;f.elements.description.value=s.description||'';f.elements.price.value=s.price;f.elements.duration.value=String(s.duration_minutes);
+});
+$('#editServiceForm').addEventListener('submit',e=>{e.preventDefault();safe(async()=>{
+ const f=e.currentTarget,id=f.elements.id.value,s=serviceCache.find(x=>x.id===id);if(!s)throw Error('Selecione um serviço.');
+ const photo=await uploadCatalogPhoto(f.elements.photo.files[0],'cortes');
+ const payload={name:f.elements.name.value.trim(),description:f.elements.description.value.trim(),price:Number(f.elements.price.value),duration_minutes:Number(f.elements.duration.value)};
+ if(photo)payload.image_url=photo;
+ const {error:x}=await db.from('services').update(payload).eq('id',id);if(x)throw x;
+ f.elements.photo.value='';await Promise.all([services(),refreshCatalogAdmin()]);alert('Corte atualizado.');
+})});
+$('#cosmeticsList').addEventListener('click',e=>{
+ const btn=e.target.closest('[data-edit-cosmetic]');if(!btn)return;
+ const p=cosmeticCache.find(x=>x.id===btn.dataset.editCosmetic);if(!p)return;
+ const f=$('#cosmeticsForm');for(const k of ['id','name','description','price','stock'])f.elements[k].value=p[k]??'';
+ f.elements.active.checked=p.active;$('#cosmeticsFormTitle').textContent='Editar cosmético';f.scrollIntoView({behavior:'instant',block:'start'});
+});
+$('#clearCosmetic').addEventListener('click',()=>{$('#cosmeticsForm').reset();$('#cosmeticsForm').elements.id.value='';$('#cosmeticsFormTitle').textContent='Cadastrar cosmético'});
+$('#cosmeticsForm').addEventListener('submit',e=>{e.preventDefault();safe(async()=>{
+ const f=e.currentTarget;const photo=await uploadCatalogPhoto(f.elements.photo.files[0],'cosmeticos');
+ const payload={name:f.elements.name.value.trim(),description:f.elements.description.value.trim(),price:Number(f.elements.price.value),stock:Number(f.elements.stock.value),active:f.elements.active.checked};
+ if(!payload.name||!Number.isFinite(payload.price)||payload.price<0||!Number.isInteger(payload.stock)||payload.stock<0)throw Error('Confira os campos do produto.');
+ if(photo)payload.image_url=photo;
+ const id=f.elements.id.value;
+ const {error:x}=id?await db.from('barber_cosmetics').update(payload).eq('id',id):await db.from('barber_cosmetics').insert(payload);
+ if(x)throw x;f.reset();f.elements.id.value='';$('#cosmeticsFormTitle').textContent='Cadastrar cosmético';await refreshCatalogAdmin();alert('Cosmético salvo.');
+})});
+// Não altera a função services() original; carrega o catálogo após a autenticação do administrador.
+const previousInitCatalog=init;
+init=async function(){await previousInitCatalog();if(!$('#content').hidden)await refreshCatalogAdmin()};
+
 safe(init);
 
 // FINANCEIRO: valores vêm exclusivamente de financial_transactions.

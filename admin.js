@@ -171,8 +171,8 @@ $('#blocksList').addEventListener('click',e=>{const b=e.target.closest('[data-un
 })});
 
 // Configuracao de pagamentos online: apenas admin via RPC.
-$('#infiniteForm').onsubmit=e=>{e.preventDefault();safe(async()=>{
- const f=e.currentTarget,button=f.querySelector('button');button.disabled=true;
+$('#infiniteForm').onsubmit=e=>{e.preventDefault();const f=e.currentTarget;safe(async()=>{
+ const button=f.querySelector('button');button.disabled=true;
  try {const {error:x}=await db.rpc('admin_save_infinitepay_settings',{p_handle:f.elements.handle.value.trim().replace(/^\$/,''),p_public_link:f.elements.public_link.value.trim()||null,p_enabled:f.elements.enabled.checked});if(x)throw x;await loadSettings();alert('Configuração InfinitePay salva.');}
  finally {button.disabled=false}
 })};

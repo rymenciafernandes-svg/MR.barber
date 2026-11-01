@@ -694,6 +694,19 @@ footer {
   .hero-logo img { width: min(68vw, 320px); }
 }
 @media (max-width: 600px) {
+
+/* Impedir que a logo seja arrastada ou selecionada */
+.hero-logo,
+.hero-logo img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.hero-logo img {
+  pointer-events: none;
+}
+
   .hero { gap: 24px; }
   .hero h1 { font-size: clamp(2.8rem, 11vw, 3.4rem); }
   .hero-logo img { width: min(70vw, 270px); }

@@ -2,3 +2,23 @@
 
 /* Agendamento dentro da área do cliente */
 .booking-form{max-width:920px}.booking-form label{display:block;margin:18px 0 7px;font-weight:700;color:var(--text)}.booking-form select,.booking-form input,.booking-form textarea{display:block;width:100%;background:#0c1d14;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:13px;font:inherit}.booking-form select:focus,.booking-form input:focus,.booking-form textarea:focus{outline:2px solid var(--gold);outline-offset:1px}.slot-list{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px}.slot-button{background:#0c1d14;border:1px solid var(--gold);color:var(--gold);padding:11px 18px;border-radius:10px}.slot-button.selected{background:var(--gold);color:#0c1d14}.booking-form #bookBtn{margin-top:20px}.booking-form #chosenSlot{font-weight:700;color:var(--gold)}
+
+/* MOBILE PWA - cliente */
+html,body{max-width:100%;overflow-x:clip}
+@media(max-width:850px){
+ .sidebar{width:min(85vw,300px);max-width:300px;overflow-y:auto;padding-bottom:max(22px,env(safe-area-inset-bottom));box-shadow:12px 0 35px #0005}
+ .topbar{position:sticky;top:0;z-index:10;min-height:68px;height:auto;padding:10px 15px;background:#0d1b13}
+ .main{padding:25px 16px calc(65px + env(safe-area-inset-bottom))}
+ .booking-form{max-width:100%}
+ .booking-form select,.booking-form input,.booking-form textarea{font-size:16px}
+ .slot-button{min-height:44px;min-width:70px}
+ .booking-card,.card{overflow-wrap:anywhere}
+}
+@media(max-width:520px){
+ .top-title{font-size:14px}
+ .top-book{font-size:12px;padding:10px 11px;white-space:nowrap}
+ .stat,.card,.booking-card{padding:17px}
+ .quick-actions .btn{width:100%}
+ .section-heading{align-items:flex-start}
+ #toast{left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));max-width:none}
+}

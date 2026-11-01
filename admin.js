@@ -83,7 +83,7 @@ $('#services').addEventListener('click',e=>{const b=e.target.closest('button');i
 $('#serviceForm').onsubmit=e=>{e.preventDefault();safe(async()=>{const f=e.currentTarget,v=new FormData(f);const {error:x}=await db.from('services').insert({name:String(v.get('name')).trim(),description:String(v.get('description')||''),price:Number(v.get('price')),duration_minutes:Number(v.get('duration')),active:true});if(x)throw x;f.reset();await services()})};
 $('#hoursForm').onsubmit=e=>{e.preventDefault();safe(async()=>{if(!settings?.id)throw Error('Configurações não encontradas');const f=e.currentTarget;if(f.elements.close.value<=f.elements.open.value)throw Error('Horário de fechamento inválido');const {error:x}=await db.from('barbershop_settings').update({opening_time:f.elements.open.value,closing_time:f.elements.close.value}).eq('id',settings.id);if(x)throw x;await loadSettings();alert('Horários atualizados')})};
 $('#blockForm').onsubmit=e=>{e.preventDefault();safe(async()=>{const f=e.currentTarget,v=new FormData(f),a=new Date(v.get('start')),z=new Date(v.get('end'));if(!(z>a))throw Error('Período inválido');const {error:x}=await db.from('blocked_periods').insert({starts_at:a.toISOString(),ends_at:z.toISOString(),reason:String(v.get('reason')||'')});if(x)throw x;f.reset();await blocksRefresh();alert('Período bloqueado')})};
-$('#logout').onclick=()=>safe(async()=>{await db.auth.signOut();location.href='index.html'});
+$('#logout').onclick=()=>safe(async()=>{await db.auth.signOut();location.href='/'});
 
 /* CATÁLOGO DE COSMÉTICOS — etapa 1: não altera reservas ou caixa */
 let cosmeticCache=[], serviceCache=[];

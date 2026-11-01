@@ -47,10 +47,11 @@ $('#nav').addEventListener('click', e => {
   const view = btn.dataset.view;
   const current = document.querySelector('#nav [data-view].active');
   if (current === btn) return;
+  // Reposiciona antes de ocultar o painel longo, evitando salto na rolagem.
+  if (window.scrollY > 0) window.scrollTo(0, 0);
   document.querySelectorAll('#nav [data-view]').forEach(b => b.classList.toggle('active', b === btn));
   document.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== view; });
   $('#pageTitle').textContent = btn.textContent.trim();
-  window.scrollTo({ top: 0, behavior: 'instant' });
   const task = viewTasks[view];
   if (task && Date.now() - (lastViewLoad.get(view) || 0) > VIEW_CACHE_MS) {
     lastViewLoad.set(view, Date.now());

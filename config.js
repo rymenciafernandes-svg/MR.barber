@@ -7,10 +7,10 @@
 */
 
 // URL do seu projeto Supabase
-window.SUPABASE_URL = "COLE_AQUI_SUA_URL_SUPABASE";
+window.SUPABASE_URL = "https://vmkcxjaivjeotbdarpsv.supabase.co/rest/v1/";
 
 // Chave pública do Supabase
-window.SUPABASE_ANON_KEY = "COLE_AQUI_SUA_CHAVE_PUBLICA";
+window.SUPABASE_ANON_KEY = "sb_publishable_BsBi-CB8Lm6Jf5AEBBW74w_rf-R_t7M";
 
 /*
  IMPORTANTE:

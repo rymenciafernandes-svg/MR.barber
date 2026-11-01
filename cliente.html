@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minha conta | Mr. Rodolfo Barbershop</title>
+<link rel="stylesheet" href="cliente.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Menu do cliente">
+    <a class="brand" href="index.html">MR. <span>RODOLFO</span></a>
+    <div class="sidebar-label">ÁREA DO CLIENTE</div>
+    <nav class="side-nav" aria-label="Navegação da conta">
+      <a href="#inicio" data-page="inicio" class="active"><span>▦</span> Visão geral</a>
+      <a href="#horarios" data-page="horarios"><span>▣</span> Meus horários</a>
+      <a href="#historico" data-page="historico"><span>◷</span> Histórico</a>
+      <a href="#pagamentos" data-page="pagamentos"><span>◇</span> Pagamentos</a>
+      <a href="#perfil" data-page="perfil"><span>♙</span> Meu perfil</a>
+    </nav>
+    <div class="sidebar-bottom"><a href="index.html#agendar">← Voltar ao site</a><button id="logoutSide" class="text-button">Sair da conta</button></div>
+  </aside>
+  <div class="content-wrap">
+    <header class="topbar">
+      <button id="menuToggle" class="icon-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+      <span class="top-title">Minha conta</span>
+      <a href="index.html#agendar" class="btn btn-gold top-book">+ Agendar corte</a>
+    </header>
+    <main id="mainContent" class="main">
+      <div class="eyebrow">MR. RODOLFO BARBERSHOP</div>
+      <h1 id="pageTitle">Bem-vindo!</h1>
+      <p id="pageSubtitle" class="subtitle">Acompanhe seus horários e pagamentos em um só lugar.</p>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <section id="page-inicio" class="page">
+        <div class="stats">
+          <article class="stat"><span>Próximos horários</span><strong id="statUpcoming">—</strong></article>
+          <article class="stat"><span>Atendimentos concluídos</span><strong id="statCompleted">—</strong></article>
+          <article class="stat"><span>Pagamentos pendentes</span><strong id="statPending">—</strong></article>
+        </div>
+        <div class="section-heading"><h2>Seu próximo atendimento</h2><a href="#horarios">Ver todos →</a></div>
+        <div id="nextBooking" class="card"><p class="muted">Carregando...</p></div>
+        <div class="quick-actions"><a class="btn btn-gold" href="index.html#agendar">Reservar novo horário</a><a class="btn btn-outline" href="#historico">Consultar histórico</a></div>
+      </section>
+      <section id="page-horarios" class="page" hidden><div id="upcomingBookings" class="booking-list"><p class="muted">Carregando...</p></div></section>
+      <section id="page-historico" class="page" hidden><div id="pastBookings" class="booking-list"><p class="muted">Carregando...</p></div></section>
+      <section id="page-pagamentos" class="page" hidden><div class="card"><h2>Seus pagamentos</h2><p class="muted">Consulte os pagamentos vinculados aos seus agendamentos. O pagamento online só é disponibilizado quando a barbearia habilitar essa função.</p></div><div id="paymentBookings" class="booking-list"></div></section>
+      <section id="page-perfil" class="page" hidden><div class="card profile-card"><h2>Informações da conta</h2><div class="profile-row"><span>E-mail</span><strong id="profileEmail">—</strong></div><div class="profile-row"><span>Tipo de conta</span><strong>Cliente</strong></div><p class="muted">Para alterar sua senha, use a opção “Esqueci minha senha” na tela de entrada do site.</p><button class="btn btn-outline" id="logoutProfile">Sair da conta</button></div></section>
+    </main>
+  </div>
+</div>
+<div id="backdrop" class="backdrop" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="cliente.js"></script>
+</body></html>

@@ -8,3 +8,8 @@
 
 /* ETAPA 4 */
 .day-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px}.day-choice{display:flex;gap:9px;align-items:center;padding:11px;border:1px solid #425448;border-radius:9px}.day-choice input{width:auto;min-width:auto;accent-color:#c6a35c}.day-choice span{font-size:13px}#historyList .item{align-items:flex-start}#infiniteStatus{color:#e2c989}
+
+/* Estabilidade visual na navegação entre abas */
+[hidden] { display: none !important; }
+html { scrollbar-gutter: stable; }
+[data-panel] { min-width: 0; }

@@ -5,3 +5,6 @@
 
 /* AGENDA - ACOES E STATUS */
 .booking-item{align-items:flex-start}.booking-info{min-width:0;flex:1}.booking-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.booking-tag{font-size:11px;padding:6px 9px;border:1px solid #536455;border-radius:99px;color:#d2dfd3}.booking-tag.tag-paid{border-color:#598c67;color:#a7ddba}.booking-actions{justify-content:flex-end}.actions button.danger{background:transparent;border:1px solid #b97b74;color:#f3b7a9}.actions button.danger:hover{background:#4a2929}@media(max-width:600px){.booking-actions{justify-content:flex-start;width:100%}.booking-actions button{flex:1;min-width:130px}}
+
+/* ETAPA 4 */
+.day-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px}.day-choice{display:flex;gap:9px;align-items:center;padding:11px;border:1px solid #425448;border-radius:9px}.day-choice input{width:auto;min-width:auto;accent-color:#c6a35c}.day-choice span{font-size:13px}#historyList .item{align-items:flex-start}#infiniteStatus{color:#e2c989}

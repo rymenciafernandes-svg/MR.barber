@@ -297,6 +297,8 @@ async function login(event) {
 
     closeModal();
     toast("Login realizado com sucesso!");
+    await updateAuthentication();
+    window.location.assign(state.isAdmin ? "admin.html" : "cliente.html");
 
   } catch (error) {
     setLoading($("#loginBtn"), false);
@@ -334,6 +336,8 @@ async function signup() {
     if (data.session) {
       closeModal();
       toast("Conta criada com sucesso!");
+      await updateAuthentication();
+      window.location.assign(state.isAdmin ? "admin.html" : "cliente.html");
     } else {
       toast("Conta criada! Verifique seu e-mail para confirmar.");
     }
@@ -391,6 +395,10 @@ async function updateAuthentication() {
   }
 
   $("#adminLink").hidden = !state.isAdmin;
+  const accountLink = $("#myAccountLink");
+  if (accountLink) accountLink.hidden = !authenticated || state.isAdmin;
+  const bookingsLink = $("#myBookingsLink");
+  if (bookingsLink) bookingsLink.hidden = authenticated && !state.isAdmin;
 
   if (authenticated) {
     await loadMyBookings();

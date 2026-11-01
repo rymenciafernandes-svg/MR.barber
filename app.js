@@ -185,7 +185,6 @@ async function initialize() {
 
     $("#bookingDate").min = localDate();
     $("#bookingDate").value = localDate();
-    $("#adminDate").value = localDate();
 
     await loadSettings();
     await loadServices();
@@ -260,13 +259,6 @@ function setupEvents() {
 
   $("#bookBtn").addEventListener("click", createBooking);
 
-  $("#serviceForm").addEventListener("submit", saveService);
-
-  $("#adminDate").addEventListener("change", loadAdminBookings);
-
-  $("#blockForm").addEventListener("submit", blockPeriod);
-
-  $("#hoursForm").addEventListener("submit", saveHours);
 }
 
 function openModal() {
@@ -398,7 +390,6 @@ async function updateAuthentication() {
     state.isAdmin = data?.role === "admin";
   }
 
-  $("#admin").hidden = !state.isAdmin;
   $("#adminLink").hidden = !state.isAdmin;
 
   if (authenticated) {
@@ -408,12 +399,6 @@ async function updateAuthentication() {
       "Entre na sua conta para visualizar seus agendamentos.";
   }
 
-  if (state.isAdmin) {
-    await Promise.all([
-      loadAdminServices(),
-      loadAdminBookings()
-    ]);
-  }
 }
 
 /* ======================================
@@ -439,11 +424,6 @@ async function loadSettings() {
 
   updateOnlinePaymentOptions();
 
-  $("#hoursForm").elements.open.value =
-    formatTime(state.settings.opening_time);
-
-  $("#hoursForm").elements.close.value =
-    formatTime(state.settings.closing_time);
 }
 
 /* ======================================
@@ -686,9 +666,6 @@ async function createBooking() {
       loadMyBookings()
     ]);
 
-    if (state.isAdmin) {
-      await loadAdminBookings();
-    }
 
     window.location.hash = "#minhas";
 
@@ -797,390 +774,6 @@ async function cancelBooking(id) {
       loadMyBookings(),
       loadSlots()
     ]);
-
-  } catch (error) {
-    toast(errorMessage(error));
-  }
-}
-
-/* ======================================
-   ADMINISTRADOR — SERVIÇOS
-====================================== */
-
-async function saveService(event) {
-  event.preventDefault();
-
-  if (!state.isAdmin) return;
-
-  const form = event.currentTarget;
-  const values = new FormData(form);
-  const button = form.querySelector('[type="submit"]');
-
-  try {
-    setLoading(button, true, "Salvando...");
-
-    const name = String(values.get("name") || "").trim();
-    const description = String(values.get("description") || "");
-    const price = Number(values.get("price"));
-    const duration = Number(values.get("duration"));
-
-    if (!name || !Number.isFinite(price) || price < 0) {
-      throw new Error("Informe um nome e preço válido.");
-    }
-
-    let imageURL = null;
-    const photo = values.get("photo");
-
-    if (photo instanceof File && photo.size > 0) {
-      if (!photo.type.startsWith("image/")) {
-        throw new Error("Selecione uma imagem válida.");
-      }
-
-      if (photo.size > 5 * 1024 * 1024) {
-        throw new Error("A imagem deve ter no máximo 5 MB.");
-      }
-
-      const extension =
-        photo.name.split(".").pop().toLowerCase();
-
-      const allowed = ["jpg", "jpeg", "png", "webp"];
-
-      if (!allowed.includes(extension)) {
-        throw new Error("Use JPG, PNG ou WEBP.");
-      }
-
-      const path = `${crypto.randomUUID()}.${extension}`;
-
-      const { error: uploadError } = await db.storage
-        .from("service-images")
-        .upload(path, photo, {
-          contentType: photo.type,
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = db.storage
-        .from("service-images")
-        .getPublicUrl(path);
-
-      imageURL = data.publicUrl;
-    }
-
-    const { error } = await db
-      .from("services")
-      .insert({
-        name,
-        description,
-        price,
-        duration_minutes: duration,
-        image_url: imageURL,
-        active: true
-      });
-
-    if (error) throw error;
-
-    form.reset();
-
-    toast("Serviço cadastrado!");
-
-    await Promise.all([
-      loadServices(),
-      loadAdminServices()
-    ]);
-
-  } catch (error) {
-    toast(errorMessage(error));
-  } finally {
-    setLoading(button, false);
-  }
-}
-
-async function loadAdminServices() {
-  if (!state.isAdmin) return;
-
-  const container = $("#adminServices");
-
-  const { data, error } = await db
-    .from("services")
-    .select("*")
-    .order("name");
-
-  if (error) {
-    container.textContent = errorMessage(error);
-    return;
-  }
-
-  container.innerHTML = (data || []).map((service) => `
-    <div class="admin-service">
-      <strong>${escapeHTML(service.name)}</strong>
-      <p>
-        ${money(service.price)} —
-        ${Number(service.duration_minutes)} minutos
-      </p>
-      <p>${service.active ? "Ativo" : "Desativado"}</p>
-      <button class="outline"
-        data-edit="${escapeHTML(service.id)}">
-        Alterar preço
-      </button>
-      <button class="outline"
-        data-toggle="${escapeHTML(service.id)}"
-        data-active="${service.active}">
-        ${service.active ? "Desativar" : "Ativar"}
-      </button>
-    </div>
-  `).join("");
-
-  container.querySelectorAll("[data-edit]").forEach((button) => {
-    button.addEventListener("click", () => {
-      editServicePrice(button.dataset.edit);
-    });
-  });
-
-  container.querySelectorAll("[data-toggle]").forEach((button) => {
-    button.addEventListener("click", () => {
-      toggleService(
-        button.dataset.toggle,
-        button.dataset.active === "true"
-      );
-    });
-  });
-}
-
-async function editServicePrice(id) {
-  const input = prompt("Digite o novo preço em reais:");
-
-  if (input === null) return;
-
-  const price = Number(input.replace(",", "."));
-
-  if (!Number.isFinite(price) || price < 0) {
-    toast("Preço inválido.");
-    return;
-  }
-
-  const { error } = await db
-    .from("services")
-    .update({ price })
-    .eq("id", id);
-
-  if (error) {
-    toast(errorMessage(error));
-    return;
-  }
-
-  toast("Preço atualizado!");
-
-  await Promise.all([
-    loadServices(),
-    loadAdminServices()
-  ]);
-}
-
-async function toggleService(id, currentlyActive) {
-  const { error } = await db
-    .from("services")
-    .update({ active: !currentlyActive })
-    .eq("id", id);
-
-  if (error) {
-    toast(errorMessage(error));
-    return;
-  }
-
-  toast("Serviço atualizado.");
-
-  await Promise.all([
-    loadServices(),
-    loadAdminServices()
-  ]);
-}
-
-/* ======================================
-   ADMINISTRADOR — AGENDA
-====================================== */
-
-async function loadAdminBookings() {
-  if (!state.isAdmin) return;
-
-  const date = $("#adminDate").value;
-  const container = $("#adminBookings");
-
-  if (!date) return;
-
-  const start = `${date}T00:00:00-04:00`;
-
-  const nextDate = new Date(`${date}T12:00:00Z`);
-  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
-
-  const endDate = nextDate.toISOString().slice(0, 10);
-  const end = `${endDate}T00:00:00-04:00`;
-
-  const { data, error } = await db
-    .from("bookings")
-    .select(`
-      id,
-      starts_at,
-      status,
-      payment_status,
-      payment_method,
-      services(name, price),
-      profiles(email)
-    `)
-    .gte("starts_at", start)
-    .lt("starts_at", end)
-    .order("starts_at");
-
-  if (error) {
-    container.textContent = errorMessage(error);
-    return;
-  }
-
-  if (!data?.length) {
-    container.textContent = "Nenhum agendamento neste dia.";
-    return;
-  }
-
-  container.innerHTML = data.map((booking) => `
-    <div class="admin-booking">
-      <strong>${formatDateTime(booking.starts_at)}</strong>
-      <p>${escapeHTML(booking.services?.name || "")}</p>
-      <p>Cliente: ${escapeHTML(booking.profiles?.email || "")}</p>
-      <p>Status: ${escapeHTML(booking.status)}</p>
-      <p>Pagamento: ${escapeHTML(booking.payment_status)}</p>
-      ${["pix_online","card_online"].includes(booking.payment_method) && booking.payment_status === "pending" && !["cancelled"].includes(booking.status) ? `<button class="outline" data-checkout="${escapeHTML(booking.id)}">Pagar online</button>` : ""}
-      <p>Valor: ${money(booking.amount ?? booking.services?.price)}</p>
-      <button class="outline"
-        data-paid="${escapeHTML(booking.id)}">
-        Marcar como pago
-      </button>
-      <button class="outline"
-        data-complete="${escapeHTML(booking.id)}">
-        Concluir
-      </button>
-      <hr>
-    </div>
-  `).join("");
-
-  container.querySelectorAll("[data-paid]").forEach((button) => {
-    button.addEventListener("click", () => {
-      updateBooking(button.dataset.paid, "paid");
-    });
-  });
-
-  container.querySelectorAll("[data-complete]").forEach((button) => {
-    button.addEventListener("click", () => {
-      updateBooking(button.dataset.complete, "completed");
-    });
-  });
-}
-
-async function updateBooking(id, action) {
-  if (!state.isAdmin) return;
-
-  if (action === "paid") {
-    if (!confirm("Confirmar recebimento deste pagamento?")) {
-      return;
-    }
-  }
-
-  try {
-    const { error } = await db.rpc(
-      "admin_update_booking",
-      {
-        p_booking_id: id,
-        p_action: action
-      }
-    );
-
-    if (error) throw error;
-
-    toast("Agendamento atualizado.");
-    await loadAdminBookings();
-
-  } catch (error) {
-    toast(errorMessage(error));
-  }
-}
-
-/* ======================================
-   ADMINISTRADOR — BLOQUEIOS
-====================================== */
-
-async function blockPeriod(event) {
-  event.preventDefault();
-
-  if (!state.isAdmin) return;
-
-  const form = event.currentTarget;
-  const values = new FormData(form);
-
-  const start = String(values.get("start") || "");
-  const end = String(values.get("end") || "");
-  const reason = String(values.get("reason") || "");
-
-  if (!start || !end || new Date(end) <= new Date(start)) {
-    toast("Informe um período válido.");
-    return;
-  }
-
-  try {
-    const { error } = await db
-      .from("blocked_periods")
-      .insert({
-        starts_at: new Date(start).toISOString(),
-        ends_at: new Date(end).toISOString(),
-        reason
-      });
-
-    if (error) throw error;
-
-    toast("Horário bloqueado.");
-    form.reset();
-
-    await Promise.all([
-      loadSlots(),
-      loadAdminBookings()
-    ]);
-
-  } catch (error) {
-    toast(errorMessage(error));
-  }
-}
-
-/* ======================================
-   ADMINISTRADOR — FUNCIONAMENTO
-====================================== */
-
-async function saveHours(event) {
-  event.preventDefault();
-
-  if (!state.isAdmin) return;
-
-  const form = event.currentTarget;
-  const open = form.elements.open.value;
-  const close = form.elements.close.value;
-
-  if (timeToMinutes(close) <= timeToMinutes(open)) {
-    toast("O fechamento deve ser após a abertura.");
-    return;
-  }
-
-  try {
-    const { error } = await db
-      .from("barbershop_settings")
-      .update({
-        opening_time: open,
-        closing_time: close
-      })
-      .eq("id", state.settings.id);
-
-    if (error) throw error;
-
-    toast("Horários de funcionamento atualizados!");
-
-    await loadSettings();
-    await loadSlots();
 
   } catch (error) {
     toast(errorMessage(error));

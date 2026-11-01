@@ -13,3 +13,7 @@
 [hidden] { display: none !important; }
 html { scrollbar-gutter: stable; }
 [data-panel] { min-width: 0; }
+
+/* Corrige saltos de rolagem entre paineis com alturas diferentes. */
+html{scroll-behavior:auto;overflow-anchor:none}
+main,[data-panel]{overflow-anchor:none}

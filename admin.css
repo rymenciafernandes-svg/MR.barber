@@ -19,3 +19,32 @@ html{scroll-behavior:auto;overflow-anchor:none}
 main,[data-panel]{overflow-anchor:none}
 
 .catalog-row{display:flex;align-items:center;gap:14px}.catalog-thumb{width:76px;height:76px;object-fit:cover;border-radius:12px;border:1px solid #6b6245}#editServiceForm,#cosmeticsForm{max-width:740px}#cosmeticsList .item{gap:14px;flex-wrap:wrap}
+
+/* MOBILE PWA - administrador */
+html,body{max-width:100%;overflow-x:clip}
+@media(max-width:850px){
+ .layout{display:block}
+ aside{position:sticky;top:0;z-index:20;background:#101e16;border-right:0;border-bottom:1px solid #3a4230;gap:7px;padding:10px 14px}
+ aside .brand{font-size:17px;padding:2px}
+ aside .eyebrow{display:none}
+ aside nav{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:7px;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+ aside nav::-webkit-scrollbar{display:none}
+ aside nav button{flex:0 0 auto;white-space:nowrap;padding:10px 12px;min-height:42px}
+ aside .back{display:inline-block;margin:0;padding:5px 8px}
+ main{padding:20px 15px 65px}
+ main header{flex-wrap:wrap;align-items:flex-start;margin-bottom:22px}
+ .filters{gap:10px}
+ .filters label{flex:1 1 135px}
+ .item{align-items:flex-start}
+ .form{max-width:100%}
+ input,select,textarea{font-size:16px}
+ .finance-columns{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:520px){
+ .stats,.finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .stats article,.panel,.item{padding:15px}
+ .stats strong{font-size:clamp(19px,6vw,27px);overflow-wrap:anywhere}
+ .actions button{min-height:42px}
+ .catalog-row{flex-wrap:wrap}
+}
+@media(max-width:370px){.stats,.finance-stats{grid-template-columns:1fr}}

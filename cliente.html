@@ -12,6 +12,7 @@
     <div class="sidebar-label">ÁREA DO CLIENTE</div>
     <nav class="side-nav" aria-label="Navegação da conta">
       <a href="#inicio" data-page="inicio" class="active"><span>▦</span> Visão geral</a>
+      <a href="#agendar" data-page="agendar"><span>＋</span> Agende aqui</a>
       <a href="#horarios" data-page="horarios"><span>▣</span> Meus horários</a>
       <a href="#historico" data-page="historico"><span>◷</span> Histórico</a>
       <a href="#pagamentos" data-page="pagamentos"><span>◇</span> Pagamentos</a>
@@ -23,7 +24,7 @@
     <header class="topbar">
       <button id="menuToggle" class="icon-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">☰</button>
       <span class="top-title">Minha conta</span>
-      <a href="index.html#agendar" class="btn btn-gold top-book">+ Agendar corte</a>
+      <a href="#agendar" class="btn btn-gold top-book">+ Agendar corte</a>
     </header>
     <main id="mainContent" class="main">
       <div class="eyebrow">MR. RODOLFO BARBERSHOP</div>
@@ -38,7 +39,31 @@
         </div>
         <div class="section-heading"><h2>Seu próximo atendimento</h2><a href="#horarios">Ver todos →</a></div>
         <div id="nextBooking" class="card"><p class="muted">Carregando...</p></div>
-        <div class="quick-actions"><a class="btn btn-gold" href="index.html#agendar">Reservar novo horário</a><a class="btn btn-outline" href="#historico">Consultar histórico</a></div>
+        <div class="quick-actions"><a class="btn btn-gold" href="cliente.html#agendar">Reservar novo horário</a><a class="btn btn-outline" href="#historico">Consultar histórico</a></div>
+      </section>
+      <section id="page-agendar" class="page" hidden>
+        <div class="card booking-form">
+          <h2>Agende seu horário</h2>
+          <label for="serviceSelect">Serviço</label>
+          <select id="serviceSelect"><option value="">Carregando serviços...</option></select>
+          <label for="bookingDate">Dia</label>
+          <input id="bookingDate" type="date">
+          <label>Horários disponíveis</label>
+          <div id="slots" class="slot-list">Selecione um serviço e uma data.</div>
+          <div id="bookingDetails" hidden>
+            <p id="chosenSlot"></p>
+            <label for="paymentMethod">Forma de pagamento</label>
+            <select id="paymentMethod">
+              <option value="pix_local">Pix presencial</option><option value="card_local">Cartão presencial</option>
+              <option value="cash">Dinheiro presencial</option><option value="pix_online">Pix online</option>
+              <option value="card_online">Cartão online</option>
+            </select>
+            <label for="bookingNote">Observações (opcional)</label>
+            <textarea id="bookingNote" maxlength="500" rows="3" placeholder="Detalhes do atendimento"></textarea>
+            <button class="btn btn-gold" id="bookBtn" type="button">Confirmar agendamento</button>
+            <p class="muted">Pagamentos online só ficam disponíveis quando habilitados pela barbearia e são confirmados no servidor.</p>
+          </div>
+        </div>
       </section>
       <section id="page-horarios" class="page" hidden><div id="upcomingBookings" class="booking-list"><p class="muted">Carregando...</p></div></section>
       <section id="page-historico" class="page" hidden><div id="pastBookings" class="booking-list"><p class="muted">Carregando...</p></div></section>

@@ -1,4 +1,3 @@
-
 /*
   MR. RODOLFO BARBERSHOP
   app.js — Sistema de agendamentos
@@ -65,6 +64,45 @@ function toast(message) {
 function errorMessage(error) {
   console.error(error);
   return error?.message || "Ocorreu um erro inesperado.";
+}
+
+function onlinePaymentsEnabled() {
+  return state.settings?.infinitepay_enabled === true &&
+    Boolean(String(state.settings?.infinitepay_handle || "").trim());
+}
+
+function updateOnlinePaymentOptions() {
+  const select = $("#paymentMethod");
+  if (!select) return;
+  const enabled = onlinePaymentsEnabled();
+  for (const option of select.options) {
+    if (["pix_online", "card_online"].includes(option.value)) {
+      option.disabled = !enabled;
+      option.textContent = option.value === "pix_online"
+        ? (enabled ? "Pix online" : "Pix online (indisponível)")
+        : (enabled ? "Cartão online" : "Cartão online (indisponível)");
+    }
+  }
+  if (!enabled && ["pix_online", "card_online"].includes(select.value)) {
+    select.value = "pix_local";
+  }
+}
+
+async function checkoutErrorMessage(error) {
+  // Supabase FunctionsHttpError: o corpo real da resposta fica em context.
+  try {
+    if (error?.context && typeof error.context.json === "function") {
+      const payload = await error.context.json();
+      if (typeof payload?.error === "string") {
+        if (/pagamento online indispon[ií]vel/i.test(payload.error))
+          return "Pagamento online temporariamente indisponível. Escolha o pagamento presencial ou tente mais tarde.";
+        if (/reserva n[aã]o eleg[ií]vel/i.test(payload.error))
+          return "Esta reserva não está disponível para pagamento online.";
+        return payload.error;
+      }
+    }
+  } catch (parseError) { console.warn("Não foi possível ler o erro do checkout", parseError); }
+  return "Não foi possível abrir o pagamento online. Tente novamente mais tarde.";
 }
 
 function requireDB() {
@@ -399,6 +437,8 @@ async function loadSettings() {
     work_days: [1, 2, 3, 4, 5, 6]
   };
 
+  updateOnlinePaymentOptions();
+
   $("#hoursForm").elements.open.value =
     formatTime(state.settings.opening_time);
 
@@ -584,6 +624,11 @@ async function createBooking() {
   const time = state.selectedSlot;
   const paymentMethod = $("#paymentMethod").value;
   const note = $("#bookingNote").value.trim();
+  if (["pix_online", "card_online"].includes(paymentMethod) && !onlinePaymentsEnabled()) {
+    toast("Pagamento online temporariamente indisponível. Escolha uma opção presencial.");
+    updateOnlinePaymentOptions();
+    return;
+  }
 
   if (!serviceId || !date || !time) {
     toast("Selecione serviço, data e horário.");
@@ -624,7 +669,7 @@ async function createBooking() {
         return;
       } catch (checkoutError) {
         console.error(checkoutError);
-        toast("Reserva criada, mas não foi possível abrir o pagamento. Acesse Meus agendamentos para tentar novamente.");
+        toast(`Reserva criada. ${await checkoutErrorMessage(checkoutError)}`);
         await loadMyBookings();
         window.location.hash = "#minhas";
         return;
@@ -700,7 +745,11 @@ async function loadMyBookings() {
       <p>Valor: ${money(booking.amount ?? booking.services?.price)}</p>
       <p>Status: ${escapeHTML(booking.status)}</p>
       <p>Pagamento: ${escapeHTML(booking.payment_status)}</p>
-      ${["pix_online","card_online"].includes(booking.payment_method) && booking.payment_status === "pending" && !["cancelled"].includes(booking.status) ? `<button class="outline" data-checkout="${escapeHTML(booking.id)}">Pagar online</button>` : ""}
+      ${["pix_online","card_online"].includes(booking.payment_method) && booking.payment_status === "pending" && !["cancelled"].includes(booking.status)
+        ? (onlinePaymentsEnabled()
+          ? `<button class="outline" data-checkout="${escapeHTML(booking.id)}">Pagar online</button>`
+          : `<p class="muted">Pagamento online temporariamente indisponível. Entre em contato com a barbearia para combinar o pagamento.</p>`)
+        : ""}
       ${
         ["pending", "confirmed"].includes(booking.status) && booking.payment_status === "pending" && !["pix_online","card_online"].includes(booking.payment_method)
           ? `<button class="outline"
@@ -717,11 +766,11 @@ async function loadMyBookings() {
     button.addEventListener("click", async () => {
       button.disabled = true;
       try {
-       const {data: checkout, error} = await db.functions.invoke("rodolfo-create-checkout", {body:{booking_id:button.dataset.checkout}});
+        const {data: checkout, error} = await db.functions.invoke("rodolfo-create-checkout", {body:{booking_id:button.dataset.checkout}});
         if(error) throw error;
         if(!checkout?.url) throw new Error(checkout?.error || "Checkout indisponível");
         window.location.assign(checkout.url);
-      } catch(e) { toast(errorMessage(e)); button.disabled=false; }
+      } catch(e) { console.error(e); toast(await checkoutErrorMessage(e)); button.disabled=false; }
     });
   });
   container.querySelectorAll("[data-cancel]").forEach((button) => {

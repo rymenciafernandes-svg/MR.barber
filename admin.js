@@ -32,7 +32,31 @@ async function agenda(){const [from,to]=range($('#agendaDate').value);const list
 async function services(){const {data,error:e}=await db.from('services').select('*').order('name');if(e)throw e;$('#services').innerHTML=(data||[]).map(s=>`<div class="item"><div><strong>${esc(s.name)}</strong><p>${cash(s.price)} · ${Number(s.duration_minutes)} min · ${s.active?'Ativo':'Inativo'}</p></div><div class="actions"><button class="secondary" data-price="${esc(s.id)}">Alterar preço</button><button data-toggle="${esc(s.id)}" data-active="${s.active}">${s.active?'Desativar':'Ativar'}</button></div></div>`).join('')||'<p>Nenhum serviço cadastrado.</p>'}
 async function init(){if(!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY)throw Error('Configuração Supabase ausente.');const {data:{user},error:e}=await db.auth.getUser();if(e||!user){$('#authStatus').textContent='Faça login no site primeiro.';return}const {data:profile,error:pe}=await db.from('profiles').select('role').eq('id',user.id).maybeSingle();if(pe)throw pe;if(profile?.role!=='admin'){ $('#authStatus').textContent='Acesso restrito ao administrador.';return}$('#authStatus').textContent='Administrador';$('#content').hidden=false;$('#from').value=day().slice(0,8)+'01';$('#to').value=day();$('#agendaDate').value=day();$('#historyFrom').value=day().slice(0,8)+'01';$('#historyTo').value=day();$('#blocksFrom').value=day();$('#blocksTo').value=day().slice(0,8)+'28';await Promise.all([dashboard(),services(),loadSettings()])}
 async function loadSettings(){const {data,error:e}=await db.from('barbershop_settings').select('*').limit(1).maybeSingle();if(e)throw e;settings=data;if(settings){renderWorkDays(settings.work_days);$('#infiniteStatus').textContent=settings.infinitepay_enabled?'Checkout online habilitado.':'Checkout online desabilitado.';const f=$('#infiniteForm');f.elements.handle.value=settings.infinitepay_handle||'';f.elements.public_link.value=settings.infinitepay_public_link||'';f.elements.enabled.checked=Boolean(settings.infinitepay_enabled);$('#hoursForm').elements.open.value=String(settings.opening_time).slice(0,5);$('#hoursForm').elements.close.value=String(settings.closing_time).slice(0,5)}}
-$('#nav').addEventListener('click',e=>{const btn=e.target.closest('[data-view]');if(!btn)return;document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==btn.dataset.view);$('#pageTitle').textContent=btn.textContent;if(btn.dataset.view==='agenda')safe(agenda);if(btn.dataset.view==='dashboard')safe(dashboard);if(btn.dataset.view==='servicos')safe(services);if(btn.dataset.view==='historico')safe(historyRefresh);if(btn.dataset.view==='configuracoes')safe(async()=>{await loadSettings();await blocksRefresh()});if(btn.dataset.view==='financeiro')safe(financeRefresh)});
+// Troca de abas sem aguardar o Supabase e sem disparar consultas repetidas.
+const viewTasks = {
+  agenda: agenda, dashboard: dashboard, servicos: services,
+  historico: historyRefresh,
+  configuracoes: async () => { await loadSettings(); await blocksRefresh(); },
+  financeiro: financeRefresh
+};
+const lastViewLoad = new Map();
+const VIEW_CACHE_MS = 1500;
+$('#nav').addEventListener('click', e => {
+  const btn = e.target.closest('[data-view]');
+  if (!btn) return;
+  const view = btn.dataset.view;
+  const current = document.querySelector('#nav [data-view].active');
+  if (current === btn) return;
+  document.querySelectorAll('#nav [data-view]').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== view; });
+  $('#pageTitle').textContent = btn.textContent.trim();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  const task = viewTasks[view];
+  if (task && Date.now() - (lastViewLoad.get(view) || 0) > VIEW_CACHE_MS) {
+    lastViewLoad.set(view, Date.now());
+    safe(async () => { try { await task(); } catch (err) { lastViewLoad.delete(view); throw err; } });
+  }
+});
 $('#refresh').onclick=()=>safe(dashboard);$('#reloadAgenda').onclick=()=>safe(agenda);$('#agendaDate').onchange=()=>safe(agenda);
 let bookingActionBusy=false;
 $('#appointments').addEventListener('click',e=>{

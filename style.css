@@ -706,6 +706,41 @@ footer {
 .hero-logo img {
   pointer-events: none;
 }
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.instagram-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: #c9a45d;
+  border: 1px solid rgba(201, 164, 93, 0.45);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.instagram-link:hover {
+  background: rgba(201, 164, 93, 0.12);
+  border-color: #c9a45d;
+}
+
+@media (max-width: 600px) {
+  .brand-group {
+    gap: 8px;
+  }
+
+  .instagram-link {
+    width: 34px;
+    height: 34px;
+  }
+}
 
   .hero { gap: 24px; }
   .hero h1 { font-size: clamp(2.8rem, 11vw, 3.4rem); }

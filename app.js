@@ -160,6 +160,10 @@ async function initialize() {
     state.user = data?.user || null;
 
     await updateAuthentication();
+    if (new URLSearchParams(location.search).has("order_nsu")) {
+      toast("Retorno da InfinitePay recebido. O pagamento será confirmado após verificação no servidor.");
+      history.replaceState({}, "", location.pathname + "#minhas");
+    }
 
     db.auth.onAuthStateChange((_event, session) => {
       state.user = session?.user || null;
@@ -608,6 +612,25 @@ async function createBooking() {
       throw new Error("Não foi possível confirmar a reserva.");
     }
 
+    if (["pix_online", "card_online"].includes(paymentMethod)) {
+      // A reserva foi criada. O pagamento só será marcado como pago no servidor.
+      try {
+        const bookingId = typeof data === "string" ? data : data?.id || data?.booking_id;
+        if (!bookingId) throw new Error("Reserva criada, mas o identificador não foi retornado. Abra Meus agendamentos para pagar.");
+        const { data: checkout, error: checkoutError } = await db.functions.invoke("rodolfo-checkout", {body:{booking_id:bookingId}});
+        if (checkoutError) throw checkoutError;
+        if (!checkout?.url) throw new Error(checkout?.error || "Checkout indisponível.");
+        window.location.assign(checkout.url);
+        return;
+      } catch (checkoutError) {
+        console.error(checkoutError);
+        toast("Reserva criada, mas não foi possível abrir o pagamento. Acesse Meus agendamentos para tentar novamente.");
+        await loadMyBookings();
+        window.location.hash = "#minhas";
+        return;
+      }
+    }
+
     toast("Agendamento realizado com sucesso!");
 
     $("#bookingNote").value = "";
@@ -651,6 +674,8 @@ async function loadMyBookings() {
       status,
       payment_method,
       payment_status,
+      amount,
+      infinitepay_checkout_url,
       services(name, price)
     `)
     .eq("user_id", state.user.id)
@@ -672,11 +697,12 @@ async function loadMyBookings() {
     <div class="booking-item">
       <h3>${escapeHTML(booking.services?.name || "Serviço")}</h3>
       <p>${formatDateTime(booking.starts_at)}</p>
-      <p>Valor: ${money(booking.services?.price)}</p>
+      <p>Valor: ${money(booking.amount ?? booking.services?.price)}</p>
       <p>Status: ${escapeHTML(booking.status)}</p>
       <p>Pagamento: ${escapeHTML(booking.payment_status)}</p>
+      ${["pix_online","card_online"].includes(booking.payment_method) && booking.payment_status === "pending" && !["cancelled"].includes(booking.status) ? `<button class="outline" data-checkout="${escapeHTML(booking.id)}">Pagar online</button>` : ""}
       ${
-        ["pending", "confirmed"].includes(booking.status)
+        ["pending", "confirmed"].includes(booking.status) && booking.payment_status === "pending" && !["pix_online","card_online"].includes(booking.payment_method)
           ? `<button class="outline"
                data-cancel="${escapeHTML(booking.id)}">
                Cancelar
@@ -687,6 +713,17 @@ async function loadMyBookings() {
     </div>
   `).join("");
 
+  container.querySelectorAll("[data-checkout]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        const {data: checkout, error} = await db.functions.invoke("rodolfo-checkout", {body:{booking_id:button.dataset.checkout}});
+        if(error) throw error;
+        if(!checkout?.url) throw new Error(checkout?.error || "Checkout indisponível");
+        window.location.assign(checkout.url);
+      } catch(e) { toast(errorMessage(e)); button.disabled=false; }
+    });
+  });
   container.querySelectorAll("[data-cancel]").forEach((button) => {
     button.addEventListener("click", () => {
       cancelBooking(button.dataset.cancel);
@@ -962,7 +999,8 @@ async function loadAdminBookings() {
       <p>Cliente: ${escapeHTML(booking.profiles?.email || "")}</p>
       <p>Status: ${escapeHTML(booking.status)}</p>
       <p>Pagamento: ${escapeHTML(booking.payment_status)}</p>
-      <p>Valor: ${money(booking.services?.price)}</p>
+      ${["pix_online","card_online"].includes(booking.payment_method) && booking.payment_status === "pending" && !["cancelled"].includes(booking.status) ? `<button class="outline" data-checkout="${escapeHTML(booking.id)}">Pagar online</button>` : ""}
+      <p>Valor: ${money(booking.amount ?? booking.services?.price)}</p>
       <button class="outline"
         data-paid="${escapeHTML(booking.id)}">
         Marcar como pago

@@ -658,3 +658,43 @@ footer {
     animation-duration: .01ms !important;
   }
 }
+
+
+/* LOGOMARCA NA ABERTURA — mantém o restante do site intacto */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(24px, 4vw, 72px);
+}
+.hero-content { min-width: 0; }
+.hero-logo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.hero-logo img {
+  display: block;
+  width: min(100%, 440px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 35px rgba(0,0,0,.28));
+}
+@media (max-width: 950px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    text-align: center;
+  }
+  .hero-content { max-width: 100%; }
+  .hero p { margin-left: auto; margin-right: auto; }
+  .hero-logo img { width: min(68vw, 320px); }
+}
+@media (max-width: 600px) {
+  .hero { gap: 24px; }
+  .hero h1 { font-size: clamp(2.8rem, 11vw, 3.4rem); }
+  .hero-logo img { width: min(70vw, 270px); }
+}

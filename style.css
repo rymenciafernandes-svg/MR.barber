@@ -693,8 +693,6 @@ footer {
   .hero p { margin-left: auto; margin-right: auto; }
   .hero-logo img { width: min(68vw, 320px); }
 }
-@media (max-width: 600px) {
-
 /* Impedir que a logo seja arrastada ou selecionada */
 .hero-logo,
 .hero-logo img {
@@ -742,7 +740,30 @@ footer {
   }
 }
 
+@media (max-width: 600px) {
   .hero { gap: 24px; }
   .hero h1 { font-size: clamp(2.8rem, 11vw, 3.4rem); }
   .hero-logo img { width: min(70vw, 270px); }
 }
+
+/* MOBILE PWA - site principal */
+html,body{max-width:100%;overflow-x:clip}
+@media(max-width:700px){
+ header{padding:12px 4%;gap:10px;min-height:66px}
+ .brand-social{min-width:0;gap:8px}
+ .brand{font-size:clamp(.93rem,4.1vw,1.12rem);letter-spacing:.2px}
+ .header-instagram{width:34px;height:34px;flex-shrink:0}
+ header nav{order:3;width:100%;display:flex;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;gap:18px;scrollbar-width:none;padding:5px 1px}
+ header nav::-webkit-scrollbar{display:none}
+ header nav a{white-space:nowrap;flex-shrink:0;font-size:.85rem}
+ #authBtn{margin-left:auto;flex-shrink:0;padding:9px 12px;font-size:.85rem}
+ .hero{min-height:auto;padding-top:55px;padding-bottom:55px;gap:24px}
+ .hero h1{font-size:clamp(2.6rem,10vw,3.4rem);letter-spacing:-1px}
+ .hero-logo img{width:min(68vw,260px)}
+ .cards{grid-template-columns:1fr;gap:16px}
+ .card img{height:210px}
+ .card-body{padding:19px}
+ .location-map iframe{height:300px}
+ section{scroll-margin-top:120px}
+}
+@media(max-width:380px){.brand{font-size:.9rem}.header-instagram{width:31px;height:31px}header nav{gap:14px}}

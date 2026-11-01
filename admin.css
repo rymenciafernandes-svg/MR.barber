@@ -2,3 +2,6 @@
 
 /* FINANCEIRO */
 .finance-stats{margin-bottom:24px}.finance-columns{display:grid;grid-template-columns:minmax(280px,380px) minmax(0,1fr);gap:24px;align-items:start}.finance-columns h2{margin-top:8px}.finance-item-right{display:grid;justify-items:end;gap:10px}.income{color:#a7ddba!important}.expense{color:#f3b7a9!important}#financeTransactions .item{align-items:center}#financeForm{max-width:none}#financeForm textarea{resize:vertical}@media(max-width:1050px){.finance-columns{grid-template-columns:1fr}}@media(max-width:520px){.finance-item-right{justify-items:start}.finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* AGENDA - ACOES E STATUS */
+.booking-item{align-items:flex-start}.booking-info{min-width:0;flex:1}.booking-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.booking-tag{font-size:11px;padding:6px 9px;border:1px solid #536455;border-radius:99px;color:#d2dfd3}.booking-tag.tag-paid{border-color:#598c67;color:#a7ddba}.booking-actions{justify-content:flex-end}.actions button.danger{background:transparent;border:1px solid #b97b74;color:#f3b7a9}.actions button.danger:hover{background:#4a2929}@media(max-width:600px){.booking-actions{justify-content:flex-start;width:100%}.booking-actions button{flex:1;min-width:130px}}

@@ -17,3 +17,5 @@ html { scrollbar-gutter: stable; }
 /* Corrige saltos de rolagem entre paineis com alturas diferentes. */
 html{scroll-behavior:auto;overflow-anchor:none}
 main,[data-panel]{overflow-anchor:none}
+
+.catalog-row{display:flex;align-items:center;gap:14px}.catalog-thumb{width:76px;height:76px;object-fit:cover;border-radius:12px;border:1px solid #6b6245}#editServiceForm,#cosmeticsForm{max-width:740px}#cosmeticsList .item{gap:14px;flex-wrap:wrap}

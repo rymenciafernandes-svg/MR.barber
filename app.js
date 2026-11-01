@@ -617,7 +617,7 @@ async function createBooking() {
       try {
         const bookingId = typeof data === "string" ? data : data?.id || data?.booking_id;
         if (!bookingId) throw new Error("Reserva criada, mas o identificador não foi retornado. Abra Meus agendamentos para pagar.");
-        const { data: checkout, error: checkoutError } = await db.functions.invoke("rodolfo-checkout", {body:{booking_id:bookingId}});
+        const { data: checkout, error: checkoutError } = await db.functions.invoke("rodolfo-create-checkout", {body:{booking_id:bookingId}});
         if (checkoutError) throw checkoutError;
         if (!checkout?.url) throw new Error(checkout?.error || "Checkout indisponível.");
         window.location.assign(checkout.url);

@@ -717,7 +717,7 @@ async function loadMyBookings() {
     button.addEventListener("click", async () => {
       button.disabled = true;
       try {
-        const {data: checkout, error} = await db.functions.invoke("rodolfo-checkout", {body:{booking_id:button.dataset.checkout}});
+       const {data: checkout, error} = await db.functions.invoke("rodolfo-create-checkout", {body:{booking_id:button.dataset.checkout}});
         if(error) throw error;
         if(!checkout?.url) throw new Error(checkout?.error || "Checkout indisponível");
         window.location.assign(checkout.url);

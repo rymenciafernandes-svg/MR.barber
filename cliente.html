@@ -45,8 +45,16 @@
       <section id="page-agendar" class="page" hidden>
         <div class="card booking-form">
           <h2>Agende seu horário</h2>
-          <label for="serviceSelect">Serviço</label>
-          <select id="serviceSelect"><option value="">Carregando serviços...</option></select>
+          <div class="service-picker-heading">
+            <h3 id="servicePickerTitle">Escolha seu corte</h3>
+            <p class="muted" id="servicePickerHelp">Toque em um serviço para consultar os horários disponíveis.</p>
+          </div>
+          <div id="serviceCards" class="service-card-grid" role="group" aria-labelledby="servicePickerTitle" aria-describedby="servicePickerHelp" aria-live="polite">
+            <p class="muted">Carregando serviços...</p>
+          </div>
+          <!-- Mantido para compatibilidade com a lógica de agendamento existente. -->
+          <label class="visually-hidden" for="serviceSelect">Serviço selecionado</label>
+          <select id="serviceSelect" class="visually-hidden" tabindex="-1" aria-hidden="true"><option value="">Carregando serviços...</option></select>
           <label for="bookingDate">Dia</label>
           <input id="bookingDate" type="date">
           <label>Horários disponíveis</label>

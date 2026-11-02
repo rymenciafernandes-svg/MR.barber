@@ -5,7 +5,7 @@
 <title>Minha conta | Mr. Rodolfo Barbershop</title>
 <link rel="stylesheet" href="cliente.css">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d1d15"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="/icon-192.png"></head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0d1d15"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="/icon-192.png"><style>.booking-period{padding:12px 14px;border:1px solid rgba(198,163,92,.4);border-radius:10px;background:rgba(198,163,92,.08);color:#e2c989;font-weight:700;overflow-wrap:anywhere}</style></head>
 <body>
 <div class="app">
   <aside class="sidebar" id="sidebar" aria-label="Menu do cliente">
@@ -52,7 +52,7 @@
           <label>Horários disponíveis</label>
           <div id="slots" class="slot-list">Selecione um serviço e uma data.</div>
           <div id="bookingDetails" hidden>
-            <p id="chosenSlot"></p>
+            <p id="chosenSlot" class="booking-period" role="status" aria-live="polite"></p><p class="muted">O horário selecionado é o início do atendimento. O período completo será reservado conforme a duração do serviço.</p>
             <label for="paymentMethod">Forma de pagamento</label>
             <select id="paymentMethod">
               <option value="pix_local">Pix presencial</option><option value="card_local">Cartão presencial</option>

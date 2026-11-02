@@ -23,7 +23,7 @@ async function payBooking(id,button){if(!onlineEnabled()){toast('Pagamento onlin
 async function cancelBooking(id,button){if(!confirm('Deseja realmente cancelar este agendamento?'))return;button.disabled=true;try{const {error}=await db.rpc('cancel_my_booking',{p_booking_id:id});if(error)throw error;toast('Agendamento cancelado.');await loadBookings()}catch(e){toast(errorText(e));button.disabled=false}}
 function route(){if(window.scrollY>0)window.scrollTo(0,0);const page=location.hash.slice(1);const current=Object.hasOwn(pages,page)?page:'inicio';document.querySelectorAll('.page').forEach(el=>el.hidden=el.id!==`page-${current}`);document.querySelectorAll('[data-page]').forEach(el=>{const active=el.dataset.page===current;el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current')});$('#pageTitle').textContent=pages[current][0];$('#pageSubtitle').textContent=pages[current][1];closeMenu()}
 function closeMenu(){$('#sidebar').classList.remove('open');$('#backdrop').hidden=true;$('#menuToggle').setAttribute('aria-expanded','false')}
-function setup(){window.addEventListener('hashchange',route);$('#serviceSelect').addEventListener('change',loadSlotsForBooking);$('#bookingDate').addEventListener('change',loadSlotsForBooking);$('#bookBtn').addEventListener('click',createBookingInClient);$('#menuToggle').addEventListener('click',()=>{const open=!$('#sidebar').classList.contains('open');$('#sidebar').classList.toggle('open',open);$('#backdrop').hidden=!open;$('#menuToggle').setAttribute('aria-expanded',String(open))});$('#backdrop').addEventListener('click',closeMenu);document.addEventListener('click',event=>{const pay=event.target.closest('[data-pay]');const cancel=event.target.closest('[data-cancel]');if(pay)payBooking(pay.dataset.pay,pay);else if(cancel)cancelBooking(cancel.dataset.cancel,cancel)});for(const id of ['#logoutSide','#logoutProfile'])$(id).addEventListener('click',async()=>{const {error}=await db.auth.signOut();if(error)toast(errorText(error));else location.replace('/')})}
+function setup(){window.addEventListener('hashchange',route);$('#serviceSelect').addEventListener('change',()=>{syncServiceCards();loadSlotsForBooking()});$('#bookingDate').addEventListener('change',loadSlotsForBooking);$('#bookBtn').addEventListener('click',createBookingInClient);$('#menuToggle').addEventListener('click',()=>{const open=!$('#sidebar').classList.contains('open');$('#sidebar').classList.toggle('open',open);$('#backdrop').hidden=!open;$('#menuToggle').setAttribute('aria-expanded',String(open))});$('#backdrop').addEventListener('click',closeMenu);document.addEventListener('click',event=>{const pay=event.target.closest('[data-pay]');const cancel=event.target.closest('[data-cancel]');if(pay)payBooking(pay.dataset.pay,pay);else if(cancel)cancelBooking(cancel.dataset.cancel,cancel)});for(const id of ['#logoutSide','#logoutProfile'])$(id).addEventListener('click',async()=>{const {error}=await db.auth.signOut();if(error)toast(errorText(error));else location.replace('/')})}
 async function initialize(){setup();route();$("#bookingDate").min = localDateForBooking();$("#bookingDate").value = localDateForBooking();try{if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY)throw new Error('Supabase não configurado.');db=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);const {data,error}=await db.auth.getUser();if(error||!data?.user){location.replace('/');return}user=data.user;const {data:profile,error:profileError}=await db.from('profiles').select('role').eq('id',user.id).maybeSingle();if(profileError)throw profileError;if(!profile)throw new Error('Perfil de acesso não encontrado. Entre em contato com a barbearia.');if(profile.role==='admin'){location.replace('admin.html');return}/* Perfis não administrativos usam a área de cliente; RLS limita os dados. */const {data:settingsData,error:settingsError}=await db.from('barbershop_settings').select('infinitepay_enabled,infinitepay_handle').limit(1).maybeSingle();if(settingsError)console.warn('Configurações de pagamento indisponíveis',settingsError);settings=settingsData;await Promise.all([loadBookings(),loadServicesForBooking()]);db.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||!session?.user)location.replace('/')})}catch(error){const el=$('#notice');el.hidden=false;el.textContent=errorText(error);for(const id of ['#nextBooking','#upcomingBookings','#pastBookings','#paymentBookings'])$(id).innerHTML='<p class="muted">Não foi possível carregar as informações.</p>'}}
 
 // Agendamento no painel do cliente: utiliza as mesmas RPCs do site anterior.
@@ -45,10 +45,46 @@ function bookingPeriodText(start,duration){
 }
 function bookingTimeInShop(value){return new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'America/Campo_Grande'}).format(new Date(value))}
 function updatePaymentOptionsForBooking(){const select=$('#paymentMethod');for(const option of select.options){if(['pix_online','card_online'].includes(option.value)){option.disabled=!onlineEnabled();option.textContent=option.value==='pix_online'?(onlineEnabled()?'Pix online':'Pix online (indisponível)'):(onlineEnabled()?'Cartão online':'Cartão online (indisponível)')}}if(!onlineEnabled()&&['pix_online','card_online'].includes(select.value))select.value='pix_local'}
+// Os cartões usam o select existente como fonte de verdade, sem alterar as RPCs.
+function syncServiceCards(){
+ const selected=$('#serviceSelect').value;
+ document.querySelectorAll('#serviceCards [data-service-id]').forEach(button=>{
+  const active=button.dataset.serviceId===selected;
+  button.classList.toggle('is-selected',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+}
+function renderServiceCards(){
+ const container=$('#serviceCards');
+ container.replaceChildren();
+ if(!services.length){container.innerHTML='<p class="muted">Nenhum serviço disponível no momento.</p>';return}
+ for(const service of services){
+  const button=document.createElement('button');
+  button.type='button';button.className='service-choice';
+  button.dataset.serviceId=String(service.id);
+  button.setAttribute('aria-pressed','false');
+  button.setAttribute('aria-label',`${service.name}, ${money(service.price)}, ${Number(service.duration_minutes)} minutos`);
+  const info=document.createElement('span');info.className='service-choice-info';
+  const name=document.createElement('span');name.className='service-choice-name';name.textContent=service.name;
+  const meta=document.createElement('span');meta.className='service-choice-meta';
+  const price=document.createElement('span');price.className='service-choice-price';price.textContent=money(service.price);
+  const duration=document.createElement('span');duration.className='service-choice-duration';duration.textContent=`◷ ${Number(service.duration_minutes)} min`;
+  const mark=document.createElement('span');mark.className='service-choice-mark';mark.setAttribute('aria-hidden','true');
+  meta.append(price,duration);info.append(name,meta);button.append(info,mark);
+  button.addEventListener('click',()=>{
+   const select=$('#serviceSelect');
+   if(select.value===String(service.id))return;
+   select.value=String(service.id);
+   select.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  container.appendChild(button);
+ }
+ syncServiceCards();
+}
 async function loadServicesForBooking(){
  const {data,error}=await db.from('services').select('*').eq('active',true).order('name');if(error)throw error;
  services=data||[];const select=$('#serviceSelect');select.innerHTML='<option value="">Selecione um serviço</option>'+services.map(s=>`<option value="${escapeHTML(s.id)}">${escapeHTML(s.name)} — ${money(s.price)} (${Number(s.duration_minutes)} min)</option>`).join('');
- updatePaymentOptionsForBooking();await loadSlotsForBooking();
+ renderServiceCards();updatePaymentOptionsForBooking();await loadSlotsForBooking();
 }
 async function loadSlotsForBooking(){
  const request=++slotRequest;const serviceId=$('#serviceSelect').value,date=$('#bookingDate').value;
